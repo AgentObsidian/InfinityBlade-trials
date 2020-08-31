@@ -1,0 +1,21 @@
+html{
+    color: white;
+}
+
+#c{
+    position: absolute;
+    top: 0px;
+    left: 300px;
+    background-color: #404040;
+}
+
+#toolBar{
+    position: absolute;
+    top: 0px;
+    left: 0px;
+    width: 300px;
+    height: 100%;
+    background-color: #303030;
+    box-shadow: 0px 0px 10px #303030;
+    z-index: 10;
+}
