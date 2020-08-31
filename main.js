@@ -1,86 +1,81 @@
 window.onload = main;
-var c,
-    ctx,
-    middleMousedown = false,
-    canvasZoomScale = 1,
-    middleMouseDragStart,
-    canvasOrigin = [20, 20],
-    canvasOriginDragStart,
-    mapMatrix = [],
-    toolDown = false,
-    toolDragStart,
-    toolPosition,
-    activeTool;
+var canvas, ctx;
 
 function drawBackgroundGridlines(){
 
     ctx.strokeStyle = "#606060";
     ctx.lineWidth = 1;
 
-    for(var i = 1;i < Math.ceil((c.width - canvasOrigin[0])/(64/canvasZoomScale));i++){
+    for(var i = 1;i < Math.ceil((canvas.width - canvas.origin[0])/(64/canvas.zoomScale));i++){
         ctx.beginPath();
-        ctx.moveTo(canvasOrigin[0] + i*(64/canvasZoomScale), canvasOrigin[1]);
-        ctx.lineTo(canvasOrigin[0] + i*(64/canvasZoomScale), c.height);
+        ctx.moveTo(canvas.origin[0] + i*(64/canvas.zoomScale), canvas.origin[1]);
+        ctx.lineTo(canvas.origin[0] + i*(64/canvas.zoomScale), canvas.height);
         ctx.stroke();
     }
 
-    for(var i = 1;i < Math.ceil((c.height - canvasOrigin[1])/(64/canvasZoomScale));i++){
+    for(var i = 1;i < Math.ceil((canvas.height - canvas.origin[1])/(64/canvas.zoomScale));i++){
         ctx.beginPath();
-        ctx.moveTo(canvasOrigin[0], canvasOrigin[1] + i*(64/canvasZoomScale));
-        ctx.lineTo(c.width, canvasOrigin[1] + i*(64/canvasZoomScale));
+        ctx.moveTo(canvas.origin[0], canvas.origin[1] + i*(64/canvas.zoomScale));
+        ctx.lineTo(canvas.width, canvas.origin[1] + i*(64/canvas.zoomScale));
         ctx.stroke();
     }
 
     ctx.strokeStyle = "#FFFFFF";
+
     ctx.beginPath();
-    ctx.moveTo(canvasOrigin[0], canvasOrigin[1]);
-    ctx.lineTo(canvasOrigin[0], c.height);
-    ctx.stroke();
-    ctx.beginPath();
-    ctx.moveTo(canvasOrigin[0], canvasOrigin[1]);
-    ctx.lineTo(c.width, canvasOrigin[1]);
+    ctx.moveTo(canvas.origin[0], canvas.origin[1]);
+    ctx.lineTo(canvas.origin[0], canvas.height);
     ctx.stroke();
 
-}
-
-function resizeCanvas(){
-
-    c.height = window.innerHeight;
-    c.width = window.innerWidth - 300;
+    ctx.beginPath();
+    ctx.moveTo(canvas.origin[0], canvas.origin[1]);
+    ctx.lineTo(canvas.width, canvas.origin[1]);
+    ctx.stroke();
 
 }
 
 function showToolPreview(){
 
-    if(toolDown && (toolDragStart[0] >= 0) && (toolDragStart[1] >= 0)){
+    if(canvas.tool.toolActive && (canvas.tool.toolStart[0] >= 0) && (canvas.tool.toolStart[1] >= 0)){
 
-        if(toolDragStart[0] <= toolPosition[0]){
-            var previewX = Math.floor(toolDragStart[0]) * (64/canvasZoomScale) + canvasOrigin[0];
-            var previewWidth = Math.ceil(toolPosition[0]) * (64/canvasZoomScale) + canvasOrigin[0] - previewX;
+        if(canvas.tool.toolStart[0] <= canvas.tool.toolPosition[0]){
+            var previewX = Math.floor(canvas.tool.toolStart[0]) * (64/canvas.zoomScale) + canvas.origin[0];
+            var previewWidth = Math.ceil(canvas.tool.toolPosition[0]) * (64/canvas.zoomScale) + canvas.origin[0] - previewX;
         }else{
-            if(toolPosition[0] < 0){
-                var previewX = canvasOrigin[0];
+            if(canvas.tool.toolPosition[0] < 0){
+                var previewX = canvas.origin[0];
             }else{
-                var previewX = Math.floor(toolPosition[0]) * (64/canvasZoomScale) + canvasOrigin[0];
+                var previewX = Math.floor(canvas.tool.toolPosition[0]) * (64/canvas.zoomScale) + canvas.origin[0];
             }
-            var previewWidth = Math.ceil(toolDragStart[0]) * (64/canvasZoomScale) + canvasOrigin[0] - previewX;
+            var previewWidth = Math.ceil(canvas.tool.toolStart[0]) * (64/canvas.zoomScale) + canvas.origin[0] - previewX;
         }
         
-        if(toolDragStart[1] <= toolPosition[1]){
-            var previewY = Math.floor(toolDragStart[1]) * (64/canvasZoomScale) + canvasOrigin[1];
-            var previewHeight = Math.ceil(toolPosition[1]) * (64/canvasZoomScale) + canvasOrigin[1] - previewY;
+        if(canvas.tool.toolStart[1] <= canvas.tool.toolPosition[1]){
+            var previewY = Math.floor(canvas.tool.toolStart[1]) * (64/canvas.zoomScale) + canvas.origin[1];
+            var previewHeight = Math.ceil(canvas.tool.toolPosition[1]) * (64/canvas.zoomScale) + canvas.origin[1] - previewY;
         }else{
-            if(toolPosition[1] < 0){
-                var previewY = canvasOrigin[1];
+            if(canvas.tool.toolPosition[1] < 0){
+                var previewY = canvas.origin[1];
             }else{
-                var previewY = Math.floor(toolPosition[1]) * (64/canvasZoomScale) + canvasOrigin[1];
+                var previewY = Math.floor(canvas.tool.toolPosition[1]) * (64/canvas.zoomScale) + canvas.origin[1];
             }
-            var previewHeight = Math.ceil(toolDragStart[1]) * (64/canvasZoomScale) + canvasOrigin[1] - previewY;
+            var previewHeight = Math.ceil(canvas.tool.toolStart[1]) * (64/canvas.zoomScale) + canvas.origin[1] - previewY;
         }
 
-        ctx.fillStyle = "rgb(255, 255, 255, .3)";
+        if(canvas.tool.activeTool == "barrierPaint"){
+
+            ctx.fillStyle = "rgb(255, 50, 255, .3)";
+            ctx.strokeStyle = "#FF50FF";
+
+        }else{
+
+            ctx.fillStyle = "rgb(255, 255, 255, .3)";
+            ctx.strokeStyle = "#FFFFFF";
+
+        }
+
         ctx.fillRect(previewX, previewY, previewWidth, previewHeight);
-        ctx.strokeStyle = "white";
+
         ctx.beginPath();
         ctx.moveTo(previewX, previewY);
         ctx.lineTo(previewX + previewWidth, previewY);
@@ -93,75 +88,144 @@ function showToolPreview(){
 
 }
 
-function renderCanvas(){
-
-    ctx.fillStyle = "#404040";
-    ctx.fillRect(0, 0, c.width, c.height);
-
-    drawBackgroundGridlines();
-    showToolPreview();
-
-}
-
 function main(){
 
-    c = getEl("c");
-    ctx = c.getContext("2d");
-    resizeCanvas();
-    renderCanvas();
+    canvas = getEl("canvas");
+    canvas.zoomScale = 1;
+    canvas.origin = [20, 20];
+    canvas.moving = false;
+    canvas.moveStart = [0, 0];
+    canvas.moveOrigin = [0, 0];
+    canvas.mapMatrix = [];
+    
+    canvas.tool = {
+        "toolActive": false,
+        "activeTool": "barrierPaint",
+        "toolPosition": [0, 0],
+        "toolStart": [0, 0]
+    };
+
+    canvas.render = function(){
+
+        ctx.fillStyle = "#404040";
+        ctx.fillRect(0, 0, this.width, this.height);
+    
+        drawBackgroundGridlines();
+        showToolPreview();
+    
+    };
+
+    canvas.resize = function(){
+
+        this.height = window.innerHeight;
+        this.width = window.innerWidth - 300;
+
+    }
+
+    ctx = canvas.getContext("2d");
+    canvas.resize();
+    canvas.render();
 
     window.addEventListener("resize", function(e){
-        resizeCanvas();
-        renderCanvas();
+
+        canvas.resize();
+        canvas.render();
+
     });
 
-    c.addEventListener("mousedown", function(e){
+    canvas.addEventListener("mousedown", function(e){
+
         if(e.which == 2){
-            middleMousedown = true;
-            middleMouseDragStart = [e.x, e.y];
-            canvasOriginDragStart = [canvasOrigin[0], canvasOrigin[1]];
-            c.style.cursor = "move";
+
+            this.moving = true;
+            this.moveStart = [e.x, e.y];
+            this.moveOrigin = [this.origin[0], this.origin[1]];
+            this.style.cursor = "move";
+
         }else if(e.which == 1){
-            toolDown = true;
-            toolDragStart = [
-                ((e.x - 300) - canvasOrigin[0])/(64/canvasZoomScale),
-                (e.y - canvasOrigin[1])/(64/canvasZoomScale)
+
+            this.tool.toolActive = true;
+            this.tool.toolStart = [
+                ((e.x - 300) - this.origin[0]) / (64/this.zoomScale),
+                (e.y - this.origin[1]) / (64/this.zoomScale)
             ];
-            toolPosition = [
-                ((e.x - 300) - canvasOrigin[0])/(64/canvasZoomScale),
-                (e.y - canvasOrigin[1])/(64/canvasZoomScale)
+            this.tool.toolPosition = [
+                ((e.x - 300) - this.origin[0]) / (64/this.zoomScale),
+                (e.y - this.origin[1]) / (64/this.zoomScale)
             ];
-            c.style.cursor = "pointer";
-            renderCanvas();
+            this.style.cursor = "pointer";
+            this.render();
+
         }
+
     });
 
     window.addEventListener("mouseup", function(e){
+
         if(e.which == 2){
-            middleMousedown = false;
+
+            canvas.moving = false;
+
         }else if(e.which == 1){
-            toolDown = false;
+
+            canvas.tool.toolActive = false;
+
         }
-        c.style.cursor = "default";
-        renderCanvas();
+
+        canvas.style.cursor = "default";
+        canvas.render();
+
     });
 
     window.addEventListener("mousemove", function(e){
-        if(middleMousedown && !toolDown){
-            canvasOrigin = [canvasOriginDragStart[0] + e.x - middleMouseDragStart[0], canvasOriginDragStart[1] + e.y - middleMouseDragStart[1]];
-            renderCanvas();
-        }else if(toolDown && !middleMousedown){
-            toolPosition = [
-                ((e.x - 300) - canvasOrigin[0])/(64/canvasZoomScale),
-                (e.y - canvasOrigin[1])/(64/canvasZoomScale)
+
+        if(canvas.moving && !canvas.tool.toolActive){
+
+            canvas.origin = [canvas.moveOrigin[0] + e.x - canvas.moveStart[0], canvas.moveOrigin[1] + e.y - canvas.moveStart[1]];
+            canvas.render();
+
+        }else if(canvas.tool.toolActive && !canvas.moving){
+
+            canvas.tool.toolPosition = [
+                ((e.x - 300) - canvas.origin[0])/(64/canvas.zoomScale),
+                (e.y - canvas.origin[1])/(64/canvas.zoomScale)
             ];
-            renderCanvas();
+            canvas.render();
+
         }
+
     });
 
-    window.addEventListener('contextmenu', function(e){
-        e.preventDefault();
+    window.addEventListener("keyup", function(e){
+
+        if(e.keyCode == 27 && canvas.tool.toolActive){
+
+            canvas.tool.toolActive = false;
+            canvas.render();
+
+        }
+
     });
+
+    window.addEventListener('contextmenu', function(e){e.preventDefault();});
+
+    getEl("scaleSlider").addEventListener("input", function(e){
+
+        canvas.zoomScale = this.value;
+        getEl("scaleSliderTitle").innerText = "Scale - " + String(this.value) + "x";
+        canvas.render();
+
+    });
+
+    for(var i = 0;i < document.getElementsByClassName("tool").length;i++){
+
+        document.getElementsByClassName("tool")[i].addEventListener("click", function(e){
+
+            console.log(this.toolName);
+
+        });
+
+    }
 
 }
 
